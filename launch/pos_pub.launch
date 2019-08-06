@@ -1,0 +1,4 @@
+<?xml version="1.0"?>
+<launch>
+	<node ns="$(env ROS_HOSTNAME)" name="position" pkg="driving_swarm_positioning" type="pos_pub.py" respawn="true"/>
+</launch>
