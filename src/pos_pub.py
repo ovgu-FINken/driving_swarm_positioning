@@ -6,32 +6,6 @@ from std_msgs.msg import Float32MultiArray, MultiArrayLayout, MultiArrayDimensio
 import serial
 import numpy as np
 
-class Package:
-    def __init__(self, sender_id=0, msg_id=0, payload=[]):
-        self.startbyte = 0x99
-        # payload + start, len, msg_id, sender_id + checkSumA, B
-        self.length = len(payload) + 6
-        self.sender_id = sender_id
-        self.msg_id = msg_id
-        self.payload = payload
-
-    @classmethod
-    def from_pprz(cls, pprz):
-        if len(pprz) < 6:
-            logging.debug("Package to small")
-        if pprz[0] != 0x99:
-            logging.debug("No startbyte found in pprz string")
-            return None
-        pkg = Package()
-        pkg.length = pprz[1]
-        pkg.sender_id = pprz[2]
-        pkg.msg_id = pprz[3]
-        pkg.payload = pprz[4:-2]
-        pkg.checkSumA = pprz[-2]
-        pkg.checkSumB = pprz[-1]
-        return pkg
-
-
 class Pub:
     def __init__(self):
         self.pos_pub = rospy.Publisher("position", Point, queue_size=1)
@@ -42,8 +16,8 @@ class Pub:
         self.pos = [0.0,0.0,0.0]
         self.anchors = np.array([[0,0.15,2.999],[4.406,0.192,2.999],[0.685,0.22,0.115],[0.658,2.895,0.125],[4.92,0.145,0.22],[4.92,2.96,0.22], [4.287,3.804,1.154], [-2.345,6.005,2.55], [-2.073,3.203,2.553]])
         self.last_result = {}
-        self.pkg = Package()
-        
+        self.pkg = []
+
     def write(self):
         rate = rospy.Rate(5)
         while not rospy.is_shutdown():
@@ -58,7 +32,7 @@ class Pub:
             out_range = Float32MultiArray()
             out_range.dim.append(MultiArrayDimension())
             out_range.dim.append(MultiArrayDimension())
-            
+
             out_range.dim[0].label = "rangeID"
             out_range.dim[1].label = "rangeValue"
             out_range.dim[0].stride = 1
@@ -90,24 +64,21 @@ class Pub:
                 self.data = self.data[1:]
             else:
                 break
-        
+
         if len(self.data) < 6:
             return
         if len(self.data) < self.data[1]:
             return
         """
-        self.pkg = Package.from_pprz(self.data[:self.data[1]])
+        self.pkg = self.data[4:self.data[1]-2]
         self.data = self.data[self.data[1]:]
 
     def parse_range(self):
-        if self.pkg == None:
+        try:
+            src, dest, dist = struct.unpack("=BBd", self.pkg)
+            return dist, src, dest
+        except:
             return None
-        if self.pkg.msg_id == 254:
-            try:
-                src, dest, dist = struct.unpack("=BBd", self.pkg.payload)
-                return dist, src, dest
-            except:
-                return None
         return None
 
 median_result = {}
@@ -137,7 +108,7 @@ def range_command():
             distances.append(median_distances[f"{rangeID} -> {i}"])
         else:
             distances.append(0)
-        
+
     solution = ra.iterative_solver_V2(anchors, np.array(distances), ITERATIONS, False, startpoint=last_position)
     return solution
 
