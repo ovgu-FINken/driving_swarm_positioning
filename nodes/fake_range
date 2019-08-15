@@ -1,24 +1,29 @@
 #!/usr/bin/env python
 import rospy
 import numpy as np
-from geometry_msgs.msg import TransformStamped
+from geometry_msgs.msg import Pose
+from gazebo_msgs.msg import ModelStates
 from driving_swarm_positioning.msg import Range
-import tf2_ros
 
 class FakeRangeNode:
     def __init__(self):
         self.publisher = rospy.Publisher("/range", Range, queue_size=5)
-        self._tf_buffer = tf2_ros.Buffer()
-        self._tf_listener = tf2_ros.TransformListener(self._tf_buffer)
+        self.positions = {}
+        self.pose_sub = rospy.Subscriber("/gazebo/model_states", ModelStates, self._model_states_cb)
     
-    def get_range(self, src_frame, dest_frame, offset_x=0.0, offset_y=0.0):
+    def get_range(self, src_frame, dest_frame):
         try:
-            tf_odom = self._tf_buffer.lookup_transform(src_frame, dest_frame,rospy.Time())
-            x = np.array([tf_odom.transform.translation.x+offset_x, tf_odom.transform.translation.y+offset_y])
-            return np.linalg.norm(x)
-        except tf2_ros.LookupException:
-           rospy.logerr("could not get transform, %s, %s"%(src_frame, dest_frame))
-        return None
+            dist = np.sqrt((self.positions[src_frame].x - self.positions[dest_frame].x)**2
+                    + (self.positions[src_frame].y - self.positions[dest_frame].y)**2)
+        except KeyError:
+            rospy.logerr("Key not existing")
+            print(self.positions.keys())
+            return None
+        return dist
+
+    def _model_states_cb(self, msg):
+        for i, key in enumerate(msg.name):
+            self.positions[key] = msg.pose[i].position
 
     def publish(self, r, src_id, dest_id):
         if r is None:
@@ -32,12 +37,13 @@ class FakeRangeNode:
 
     def periodic(self):
         # TODO make parameters flexible and configurable
-        src_frame = "map"
-        src_id = 0
-        dest_frame = "base_scan"
-        dest_id = 0
-        r = self.get_range(src_frame, dest_frame, offset_x=.5, offset_y=.5)
-        rospy.loginfo("got range %s"%r)
+        rospy.set_param("~test", 0)
+        src_frame = rospy.get_param("~src_frame", "tb3_0")
+        src_id = rospy.get_param("~src_id", 0)
+        dest_frame = rospy.get_param("~dest_frame", "tb3_1")
+        dest_id = rospy.get_param("~dest_id", 1)
+        r = self.get_range(src_frame, dest_frame)
+        rospy.logdebug("got range %s"%r)
         self.publish(r, src_id, dest_id)
         
 
