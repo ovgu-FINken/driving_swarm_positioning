@@ -87,13 +87,14 @@ class PprzParser:
             else:
                 break
         if len(self.data) < 6:
-            return
+            return False
         if len(self.data) < self.data[1]:
-            return
+            return False
         pkg = Package.from_pprz(self.data[:self.data[1]])
         self.data = self.data[self.data[1]:]
         self.callback(pkg, *self.callback_args, **self.callback_kwargs)
         self.data_in(bytearray([]))
+	return pkg
 
     def reset_data(self):
         self.data = bytearray([])

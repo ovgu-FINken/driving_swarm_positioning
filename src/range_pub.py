@@ -1,16 +1,30 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python2
 
-#import rospy
-#from driving_swarm_positioning.msg import Range
+import rospy
+from driving_swarm_positioning.msg import Range
 import serial
 import pprz
 
 module = serial.Serial("/dev/ttyS0", 115200)
-parser = pprz.PprzParser(callback=pprz.parse_range)
+parser = pprz.PprzParser()
 
 
-while True:
-    g = module.read()
-    parser.data_in(g)
+def talker():
+    pub = rospy.Publisher('RangePublisher', Range, queue_size=100)
+    rospy.init_node('RangePublisher') 
+    while not rospy.is_shutdown():
+        g = module.read()
+        pkg = parser.data_in(g)
+        if(pkg):
+            dist, src, dest = pprz.parse_range(pkg)
+            rangeMsg = Range()
+            rangeMsg.src = src
+            rangeMsg.dest = dest 
+            rangeMsg.range = dist
+            pub.publish(rangeMsg)
 
-
+if __name__ == '__main__':
+    try:
+        talker()
+    except rospy.ROSInterruptException:
+        pass
