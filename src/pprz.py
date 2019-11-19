@@ -30,15 +30,16 @@ class Package:
         return pkg
 
     def header(self):
-        return struct.pack(
-                'BBBB',
-                self.startbyte,
-                self.length,
-                self.sender_id,
-                self.msg_id)
+        header = bytearray( struct.pack(
+                            'BBBB',
+                            self.startbyte,
+                            self.length,
+                            self.sender_id,
+                            self.msg_id))
+        return header 
 
     def __bytes__(self):
-        x = bytes(self.payload) + bytes([self.checkSumA, self.checkSumB])
+        x = bytearray(self.payload) + bytearray([self.checkSumA, self.checkSumB])
         return self.header() + x
 
     def __repr__(self):
@@ -55,14 +56,14 @@ class Package:
         checkSumA = checkSumB = 0
         for c in itertools.chain(
                 self.header()[1:],
-                bytes(self.payload)
+                bytearray(self.payload)
                 ):
-            checkSumA = (checkSumA + int(c)) % 256
+            checkSumA = (checkSumA + c) % 256
             checkSumB = (checkSumB + checkSumA) % 256
         return checkSumA, checkSumB
 
     def check_length(self):
-        return self.length == len(bytes(self.payload)) + 6
+        return self.length == len(bytearray(self.payload)) + 6
 
     def valid(self):
         return (self.checkSumA, self.checkSumB) == self.calculate_checksum()
@@ -74,12 +75,12 @@ class PprzParser:
 
     def __init__(self, callback=default_callback, callback_args=(), callback_kwargs={}):
         self.callback = callback
-        self.data = bytes([])
+        self.data = bytearray([])
         self.callback_args = callback_args
         self.callback_kwargs = callback_kwargs
 
     def data_in(self, data):
-        self.data = self.data + bytes(data)
+        self.data = self.data + bytearray(data)
         while(len(self.data) > 6):
             if self.data[0] != 0x99:
                 self.data = self.data[1:]
@@ -92,15 +93,17 @@ class PprzParser:
         pkg = Package.from_pprz(self.data[:self.data[1]])
         self.data = self.data[self.data[1]:]
         self.callback(pkg, *self.callback_args, **self.callback_kwargs)
-        self.data_in(bytes([]))
+        self.data_in(bytearray([]))
 
+    def reset_data(self):
+        self.data = bytearray([])
 
 def parse_range(pkg, output=True):
     if pkg.msg_id == 254:
         src, dest, dist = struct.unpack("=BBd", pkg.payload)
         if output:
             print("received RANGE from %s" % pkg.sender_id)
-            print(f"{src} -> {dest}: {dist}")
+            print("src: " + str(src) + " --> " + str(dest) + " :  " + str(dist))
         return dist, src, dest
     elif pkg.msg_id == 2 and output:
         print("received ALIVE from %s" % pkg.sender_id)

@@ -5,12 +5,18 @@
 import serial
 import pprz
 
+
 module = serial.Serial("/dev/ttyS0", 115200)
 parser = pprz.PprzParser(callback=pprz.parse_range)
 
 
 while True:
-    g = module.read()
-    parser.data_in(g)
+  try:
+    g = module.read(
+  parser.data_in(module.read())
+
+
+
+
 
 
