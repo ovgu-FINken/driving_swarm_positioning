@@ -22,6 +22,7 @@ def talker():
             rangeMsg.dest = dest 
             rangeMsg.range = dist
             pub.publish(rangeMsg)
+            print("sent Range Message")
 
 if __name__ == '__main__':
     try:
