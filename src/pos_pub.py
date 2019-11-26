@@ -3,6 +3,13 @@
 import rospy 
 from driving_swarm_positioning.msg import Range
 
+class RangeBuffer:
+    data=[] 
+    def __init__(self):
+        self.data=[][]
+
+
+
 def callback(msg):
     print("received Message:")
     print(msg.range)
