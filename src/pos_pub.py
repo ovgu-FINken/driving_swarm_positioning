@@ -14,36 +14,36 @@ class RangeBuffer:
     def addRange(self, src, target, range):
         for rangeFrame in data:
             if(rangeFrame.src == src and rangeFrame.target == target):
-                rangeFrame.range = range
-                break
-        if(str(target) in anchors):
-            data.append(RangeFrame(src, target, range, anchors[str(target)]))
+                rangeFrame.update(range)
+                return
+        if(str(target) in self.anchors):
+            self.data.append(RangeFrame(src, target, range, self.anchors[str(target)]))
         else:
-            data.append(RangeFrame(src, target, range, Null))
+            self.data.append(RangeFrame(src, target, range, None))
 
     def addRange(self, msg):
         src = msg.src
         target = msg.dest
         range = msg.range
-        for rangeFrame in data:
+        for rangeFrame in self.data:
             if(rangeFrame.src == src and rangeFrame.target == target):
-                rangeFrame.range = range
-                break()
-        if(str(target) in anchors):
-            data.append(RangeFrame(src, target, range, anchors[str(target)]))
+                rangeFrame.update(range)
+                return
+        if(str(target) in self.anchors):
+            self.data.append(RangeFrame(src, target, range, self.anchors[str(target)]))
         else:
-            data.append(RangeFrame(src, target, range, Null))
+            self.data.append(RangeFrame(src, target, range, None))
 
     def printBuffer(self):
         for rangeFrame in self.data:
-            print(str(rangeFrame.src) + " --> " + str(rangeFrame.target) + " = " + str(rangeFrame.range) + "   : " + str(rangeFrame.howold()))
+            print(str(rangeFrame.src) + " --> " + str(rangeFrame.target) + " = " + str(rangeFrame.range) + "   : " + str(rangeFrame.howold()) + "       " + str(rangeFrame.anchorPos) )
 
 class RangeFrame:
-    range = Null
-    src = Null
-    target = Null
-    anchorPos = Null # probably unnecessary
-    lastUpdate = Null
+    range = None
+    src = None
+    target = None
+    anchorPos = None # probably unnecessary
+    lastUpdate = None
     def __init__(self, src, target, range, anchorPos):
         self.range = range
         self.src = src
@@ -53,13 +53,13 @@ class RangeFrame:
 
     def update(self, range):
         self.range = range
-        self.time = time.time()
+        self.lastUpdate = time.time()
 
     def howold(self):
         return (time.time() - self.lastUpdate)
 
 
-RangeBuffer = rangebuffer()
+rangebuffer = RangeBuffer()
 latestPosition = np.array([0,0,0.10])
 
 def build_pos_msg(pos):
@@ -84,11 +84,11 @@ def compute_position(anchors, rb, max_iterations=10, startpoint=None): #todo: um
 def callback(msg):
     print("received Message:")
     print(msg.range)
-    rangebuffer.add(msg);
+    rangebuffer.addRange(msg);
     rangebuffer.printBuffer();
 
 def range_subscriber():
-    if param_name = rospy.search_param('anchors'):
+    if rospy.search_param('anchors'):
         param_name = rospy.search_param('anchors')
         anchors = rospy.get_param(param_name)
         rangebuffer.anchors = anchors
@@ -97,7 +97,7 @@ def range_subscriber():
 
     updateRate = 0 #Hz
 
-    if param_name = rospy.search_param('positionUpdateRate'):
+    if rospy.search_param('positionUpdateRate'):
         param_name = rospy.search_param('positionUpdateRate')
         updateRate = rospy.get_param(param_name)
     else:
