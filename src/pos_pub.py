@@ -96,8 +96,8 @@ def callback(msg):
     #print(msg.range)
     rangebuffer.addRange(msg);
     #rangebuffer.printBuffer();
-    pos = compute_position(rangebuffer, startpoint = latestPosition)
-    print(pos)
+    #pos = compute_position(rangebuffer, startpoint = latestPosition)
+    #print(pos)
 
 def range_subscriber():
     if rospy.search_param('anchors'):
@@ -117,7 +117,13 @@ def range_subscriber():
 
     rospy.init_node("range_subscriber")
     rospy.Subscriber("/turtlebot3/RangePublisher", Range, callback)
-    rospy.spin()
+    rate = rospy.Rate(updateRate)
+    while not rospy.is_shutdown():
+        if (len(rangebuffer.data) > 4):
+        	pos = compute_position(rangebuffer, startpoint = latestPosition)
+        	print(pos)
+        rate.sleep()
+    # rospy.spin()
     # repeate in given rate :
         # update position (also latest position as starting point)
 
