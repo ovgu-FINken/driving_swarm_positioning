@@ -61,31 +61,45 @@ class RangeFrame:
 
 rangebuffer = RangeBuffer()
 latestPosition = np.array([0,0,0.10])
+maxAge = 2.
 
 def build_pos_msg(pos):
     return
 
-def compute_G(point, anchors): #todo iterrate over elements in dict ? -- how ? maybe iterate over the RangeFrames (with their anchors)
     G = []
+def compute_G(point, anchors):
     for i in range(anchors.shape[0]):
         R_i = np.linalg.norm(point - anchors[i])
         G.append((point - anchors[i]) / R_i)
     return np.array(G)
 
-def compute_position(anchors, rb, max_iterations=10, startpoint=None): #todo: umbauen auf variable anzahl an anchors (dont get confused with the numbers!!)
+def compute_position(rb, max_iterations=10, startpoint=None):
+    anchors = []
+    distances = []
+    #fill the arrays so that the order is the same but independent of sorting
+    for rf in rb:
+        if rf.anchorPos != None and rf.howold() < maxAge :    # ignore distances to points with unknown positions and to old distances
+            anchors.append(rf.anchorPos)
+            distances.append(rf.range)
+
     iter_point = np.random.random_sample(3,)
     if(startpoint != None):
         iter_point = startpoint
+
     for g in range(0,max_iterations):
         current_distances = np.array([np.linalg.norm(a - iter_point) for a in anchors])
         G = compute_G(iter_point, anchors)
         iter_point = iter_point + 0.5 * np.matmul(np.linalg.pinv(G),(distances - current_distances))
+
+    return iter_point
 
 def callback(msg):
     print("received Message:")
     print(msg.range)
     rangebuffer.addRange(msg);
     rangebuffer.printBuffer();
+    pos = compute_position(rangebuffer, startpoint = latestPosition)
+    print(pos)
 
 def range_subscriber():
     if rospy.search_param('anchors'):
