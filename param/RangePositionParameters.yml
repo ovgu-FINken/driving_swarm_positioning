@@ -1,4 +1,5 @@
 positionUpdateRate: 10 #Hz
+rangeTimeout: 10.0 #s 
 anchors: {
   #anchorID: [x,y,z] in m
   "128": [0.000,0.150,2.999],

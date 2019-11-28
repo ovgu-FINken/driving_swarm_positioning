@@ -61,7 +61,7 @@ class RangeFrame:
 
 rangebuffer = RangeBuffer()
 latestPosition = np.array([0,0,0.10])
-maxAge = 2.
+rangeTimeout = 2.
 
 def build_pos_msg(pos):
     return
@@ -99,21 +99,15 @@ def callback(msg):
     #pos = compute_position(rangebuffer, startpoint = latestPosition)
     #print(pos)
 
-def range_subscriber():
-    if rospy.search_param('anchors'):
-        param_name = rospy.search_param('anchors')
-        anchors = rospy.get_param(param_name)
+if __name__ == '__main__':
+    if rospy.search_param('~anchors'):
+        anchors = rospy.get_param('~anchors')
         rangebuffer.anchors = anchors
     else:
         raise NameError('no anchors defined')
-
-    updateRate = 0 #Hz
-
-    if rospy.search_param('positionUpdateRate'):
-        param_name = rospy.search_param('positionUpdateRate')
-        updateRate = rospy.get_param(param_name)
-    else:
-        raise NameError('no update Rate defined')
+        
+    updateRate = rospy.get_param('~positionUpdateRate', 10) #Hz
+    rangeTimeout = rospy.get_param('~rangeTimeout', 2.) #s
 
     rospy.init_node("range_subscriber")
     rospy.Subscriber("/turtlebot3/RangePublisher", Range, callback)
@@ -123,9 +117,3 @@ def range_subscriber():
         	pos = compute_position(rangebuffer, startpoint = latestPosition)
         	print(pos)
         rate.sleep()
-    # rospy.spin()
-    # repeate in given rate :
-        # update position (also latest position as starting point)
-
-if __name__ == '__main__':
-    range_subscriber()
