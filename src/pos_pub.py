@@ -100,16 +100,13 @@ def callback(msg):
     #print(pos)
 
 if __name__ == '__main__':
-    if rospy.search_param('~anchors'):
-        anchors = rospy.get_param('~anchors')
-        rangebuffer.anchors = anchors
-    else:
-        raise NameError('no anchors defined')
-        
+
+    rospy.init_node("range_subscriber")
+    anchors = rospy.get_param('~anchors')
+    rangebuffer.anchors = anchors        
     updateRate = rospy.get_param('~positionUpdateRate', 10) #Hz
     rangeTimeout = rospy.get_param('~rangeTimeout', 2.) #s
 
-    rospy.init_node("range_subscriber")
     rospy.Subscriber("/turtlebot3/RangePublisher", Range, callback)
     rate = rospy.Rate(updateRate)
     while not rospy.is_shutdown():
