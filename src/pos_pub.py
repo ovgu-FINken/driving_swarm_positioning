@@ -36,7 +36,7 @@ class RangeBuffer:
 
     def printBuffer(self):
         for rangeFrame in self.data:
-            print(str(rangeFrame.src) + " --> " + str(rangeFrame.target) + " = " + str(rangeFrame.range) + "   : " + str(rangeFrame.howold()) + "       " + str(rangeFrame.anchorPos) )
+            rospy.logdebug(str(rangeFrame.src) + " --> " + str(rangeFrame.target) + " = " + str(rangeFrame.range) + "   : " + str(rangeFrame.howold()) + "       " + str(rangeFrame.anchorPos) )
 
 class RangeFrame:
     range = None
@@ -78,7 +78,7 @@ def compute_position(rb, max_iterations=10, startpoint=[0,0,0]):
     distances = []
     #fill the arrays so that the order is the same but independent of sorting
     for rf in rb.data:
-        if rf.anchorPos != None and rf.howold() < maxAge :    # ignore distances to points with unknown positions and to old distances
+        if rf.anchorPos != None and rf.howold() < rangeTimeout :    # ignore distances to points with unknown positions and to old distances
             anchors.append(rf.anchorPos)
             distances.append(rf.range)
 
@@ -87,7 +87,8 @@ def compute_position(rb, max_iterations=10, startpoint=[0,0,0]):
     for g in range(0,max_iterations):
         current_distances = np.array([np.linalg.norm(a - iter_point) for a in anchors])
         G = compute_G(iter_point, anchors)
-        iter_point = iter_point + 0.5 * np.matmul(np.linalg.pinv(G),(distances - current_distances))
+	d = np.matmul(np.linalg.pinv(G),(distances - current_distances))
+        iter_point = iter_point + 0.5 * np.array([d[0], d[1], 0])
 
     return iter_point
 
@@ -95,7 +96,7 @@ def callback(msg):
     #print("received Message:")
     #print(msg.range)
     rangebuffer.addRange(msg);
-    #rangebuffer.printBuffer();
+    rangebuffer.printBuffer();
     #pos = compute_position(rangebuffer, startpoint = latestPosition)
     #print(pos)
 
@@ -107,10 +108,13 @@ if __name__ == '__main__':
     updateRate = rospy.get_param('~positionUpdateRate', 10) #Hz
     rangeTimeout = rospy.get_param('~rangeTimeout', 2.) #s
 
-    rospy.Subscriber("/turtlebot3/RangePublisher", Range, callback)
+    rospy.loginfo("i am running NOW")
+
+    rospy.Subscriber("/turtlebot1/RangePublisher", Range, callback)
     rate = rospy.Rate(updateRate)
     while not rospy.is_shutdown():
         if (len(rangebuffer.data) > 4):
         	pos = compute_position(rangebuffer, startpoint = latestPosition)
-        	print(pos)
+        	rospy.loginfo(pos)
+                print(pos)
         rate.sleep()
