@@ -2,6 +2,7 @@
 
 import rospy
 from driving_swarm_positioning.msg import Range
+from geometry_msgs.msg import Pose
 import time
 import numpy as np
 
@@ -92,6 +93,13 @@ def compute_position(rb, max_iterations=10, startpoint=[0,0,0]):
 
     return iter_point
 
+def createPosMsg(pos):
+    posemsg = Pose()
+    posemsg.position.x = pos[0]
+    posemsg.position.y = pos[1]
+    posemsg.position.z = pos[2]
+    return posemsg
+
 def callback(msg):
     #print("received Message:")
     #print(msg.range)
@@ -102,7 +110,7 @@ def callback(msg):
 
 if __name__ == '__main__':
 
-    rospy.init_node("range_subscriber")
+    rospy.init_node("RangePositionCalculator")
     anchors = rospy.get_param('~anchors')
     rangebuffer.anchors = anchors        
     updateRate = rospy.get_param('~positionUpdateRate', 10) #Hz
@@ -110,11 +118,13 @@ if __name__ == '__main__':
 
     rospy.loginfo("i am running NOW")
 
+    posPub = rospy.Publisher('RangePositionPublisher', Pose,queue_size=10) 
     rospy.Subscriber("/turtlebot1/RangePublisher", Range, callback)
     rate = rospy.Rate(updateRate)
     while not rospy.is_shutdown():
-        if (len(rangebuffer.data) > 4):
+        if (len(rangebuffer.data) > 4): #todo (auslagern + timeout beruecksichtigen!)
         	pos = compute_position(rangebuffer, startpoint = latestPosition)
         	rospy.loginfo(pos)
                 print(pos)
+		posPub.publish(createPosMsg(pos))
         rate.sleep()
