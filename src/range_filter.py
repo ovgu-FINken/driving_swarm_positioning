@@ -1,14 +1,16 @@
+#!/usr/bin/env python2
+
 import rospy
 from driving_swarm_positioning.msg import Range
 import numpy as np
 
 class RingBuffer:
     """ class that implements a not-yet-full buffer """
-    def _ _init_ _(self,size_max):
+    def __init__(self,size_max):
         self.max = size_max
         self.data = []
 
-    class _ _Full:
+    class __Full:
         """ class that implements a full buffer """
         def append(self, x):
             """ Append an element overwriting the oldest one. """
@@ -24,7 +26,7 @@ class RingBuffer:
         if len(self.data) == self.max:
             self.cur = 0
             # Permanently change self's class from non-full to full
-            self._ _class_ _ = self._ _Full
+            self.__class__ = self.__Full
 
     def get(self):
         """ Return a list of elements from the oldest to the newest. """
@@ -42,7 +44,7 @@ class RangeBufferFilterDings:
         target = msg.dest
         range = msg.range
         for distancearray in self.data:
-            if(distancearray[0] == src and rangeFrame[1] == target):
+            if(distancearray[0] == src and distancearray[1] == target):
                 distancearray[2].append(range)
                 return distancearray
         g = RingBuffer(self.window)
@@ -54,18 +56,26 @@ class RangeBufferFilterDings:
 
 def filterfunction(DataList):
     g = np.array(DataList)
+    #print(g)
     return np.median(g);
 
-def callback(msg, rangefilter):
-    lastValues = rangefilter.addRange(msg);
+
+rangefilter = RangeBufferFilterDings()
+rangePub = rospy.Publisher('FilteredRangePublisher', Range, queue_size=10)
+
+
+def callback(msg):
+    global rangefilter
+    lastValues = rangefilter.addRange(msg)[2].get()
     newRange = filterfunction(lastValues)
     newMsg = msg
     newMsg.range = newRange
-    pub.publish(newMsg)
+    rangePub.publish(newMsg)
 
 
 if __name__ == '__main__':
-    rangefilter = RangeBufferFilterDings()
     rospy.init_node("RangeFilter")
-    rangePub = rospy.Publisher('FilteredRangePublisher', Range, queue_size=10)
+    #rangePub = rospy.Publisher('FilteredRangePublisher', Range, queue_size=10)
     rospy.Subscriber("/turtlebot1/RangePublisher", Range, callback)
+    rospy.spin();
+        
