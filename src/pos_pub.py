@@ -119,7 +119,7 @@ if __name__ == '__main__':
     rospy.loginfo("i am running NOW")
 
     posPub = rospy.Publisher('RangePositionPublisher', Pose,queue_size=10) 
-    rospy.Subscriber("/turtlebot1/RangePublisher", Range, callback)
+    rospy.Subscriber("/turtlebot1/FilteredRangePublisher", Range, callback)
     rate = rospy.Rate(updateRate)
     while not rospy.is_shutdown():
         if (len(rangebuffer.data) > 4): #todo (auslagern + timeout beruecksichtigen!)
