@@ -74,8 +74,10 @@ def callback(msg):
 
 
 if __name__ == '__main__':
+    global rangePub
     rospy.init_node("RangeFilter")
+    medianFilterWindow = rospy.get_param('~MedianFilterWindow', 10)
+    rangePub.window = medianFilterWindow
     #rangePub = rospy.Publisher('FilteredRangePublisher', Range, queue_size=10)
     rospy.Subscriber("/turtlebot1/RangePublisher", Range, callback)
     rospy.spin();
-        
