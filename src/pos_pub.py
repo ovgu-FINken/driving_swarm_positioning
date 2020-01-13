@@ -5,6 +5,11 @@ from driving_swarm_positioning.msg import Range
 from geometry_msgs.msg import Pose
 import time
 import numpy as np
+import tf
+import tf2_ros
+import geometry_msgs.msg
+
+locSystemName = "UWBLocalisation"
 
 class RangeBuffer:
     data=[]
@@ -64,6 +69,25 @@ rangebuffer = RangeBuffer()
 latestPosition = np.array([0,0,0.10])
 rangeTimeout = 2.
 
+
+def send_static_map_transform():
+    br = tf2_ros.StaticTransformBroadcaster()
+    t = geometry_msgs.msg.TransformStamped()
+
+    t.header.stamp = rospy.Time.now()
+    t.header.frame_id = 'world'
+    t.child_frame_id = locSystemName
+    t.transform.translation.x = 0.0  # msg.origin.position.x
+    t.transform.translation.y = 0.0  # msg.origin.position.y
+    t.transform.translation.z = 0.0
+    t.transform.rotation.x = 0.0
+    t.transform.rotation.y = 0.0
+    t.transform.rotation.z = 0.0
+    t.transform.rotation.w = 1.0
+
+    br.sendTransform(t)
+
+
 def build_pos_msg(pos):
     return
 
@@ -118,6 +142,8 @@ if __name__ == '__main__':
 
     rospy.loginfo("i am running NOW")
 
+    send_static_map_transform()
+    
     posPub = rospy.Publisher('RangePositionPublisher', Pose,queue_size=10) 
     rospy.Subscriber("/turtlebot1/FilteredRangePublisher", Range, callback)
     rate = rospy.Rate(updateRate)
