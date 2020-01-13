@@ -21,11 +21,8 @@ def talker():
             rangeMsg.src = src
             rangeMsg.dest = dest 
             rangeMsg.range = dist
-            if src==pkg.sender_id:
-                pub.publish(rangeMsg)
-                print("sent Range Message")
-            else:
-                print("kapuuuttt")
+            pub.publish(rangeMsg)
+            print("sent Range Message")
 
 if __name__ == '__main__':
     try:
