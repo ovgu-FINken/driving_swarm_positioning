@@ -5,7 +5,7 @@ from driving_swarm_positioning.msg import Range
 import serial
 import pprz
 
-module = serial.Serial("/dev/ttyS0", 115200)
+module = serial.Serial("/dev/ttyUSB0", 115200)
 parser = pprz.PprzParser()
 
 
@@ -21,8 +21,11 @@ def talker():
             rangeMsg.src = src
             rangeMsg.dest = dest 
             rangeMsg.range = dist
-            pub.publish(rangeMsg)
-            print("sent Range Message")
+            if src==pkg.sender_id:
+                pub.publish(rangeMsg)
+                print("sent Range Message")
+            else:
+                print("kapuuuttt")
 
 if __name__ == '__main__':
     try:
