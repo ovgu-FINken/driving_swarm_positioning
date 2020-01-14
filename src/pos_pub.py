@@ -98,12 +98,24 @@ def compute_G(point, anchors):
         G.append((point - anchors[i]) / R_i)
     return np.array(G)
 
-def compute_position(rb, max_iterations=10, startpoint=[0,0,0]):
+def compute_multible_positions(rb, max_iterations=10, startpoint=[0,0,0]):
+    targetList = []
+    targets = {}
+    for rf in rb:
+        if rf.src not in targetlist :
+            targetList.append(rf.src)
+    for t in targetList:
+        target = compute_position(rb, t, max_iterations, startpoint)
+        targets[t] = target 
+    return targets 
+
+def compute_position(rb, targetNR, max_iterations=10, startpoint=[0,0,0]):
+
     anchors = []
     distances = []
     #fill the arrays so that the order is the same but independent of sorting
     for rf in rb.data:
-        if rf.anchorPos != None and rf.howold() < rangeTimeout :    # ignore distances to points with unknown positions and to old distances
+        if rf.anchorPos != None and rf.howold() < rangeTimeout and rf.src == targetNR :    # ignore distances to points with unknown positions and to old distances
             anchors.append(rf.anchorPos)
             distances.append(rf.range)
 
@@ -113,7 +125,7 @@ def compute_position(rb, max_iterations=10, startpoint=[0,0,0]):
         current_distances = np.array([np.linalg.norm(a - iter_point) for a in anchors])
         G = compute_G(iter_point, anchors)
 	d = np.matmul(np.linalg.pinv(G),(distances - current_distances))
-        iter_point = iter_point + 0.5 * np.array([d[0], d[1], 0])
+        iter_point = iter_point + 0.5 * np.array([d[0], d[1], 0]) # only calculate 2 dimensional position
 
     return iter_point
 
@@ -149,8 +161,8 @@ if __name__ == '__main__':
     rate = rospy.Rate(updateRate)
     while not rospy.is_shutdown():
         if (len(rangebuffer.data) > 4): #todo (auslagern + timeout beruecksichtigen!)
-        	pos = compute_position(rangebuffer, startpoint = latestPosition)
+        	pos = compute_positions(rangebuffer, startpoint = latestPosition)
         	rospy.loginfo(pos)
-                print(pos)
-		posPub.publish(createPosMsg(pos))
+            print(pos)
+		#posPub.publish(createPosMsg(pos))
         rate.sleep()
