@@ -89,6 +89,22 @@ def send_static_map_transform():
     br.sendTransform(t)
 
 
+def send_target_transform(br, target, pos):
+    t = geometry_msgs.msg.TransformStamped()
+    t.header.stamp = rospy.Time.now()
+    t.header.frame_id = locSystemName
+    t.child_frame_id = "targetID_" + str(target)
+    t.transform.translation.x = pos[target][0]  # msg.origin.position.x
+    t.transform.translation.y = pos[target][1]  # msg.origin.position.y
+    t.transform.translation.z = pos[target][2]
+    t.transform.rotation.x = 0.0
+    t.transform.rotation.y = 0.0
+    t.transform.rotation.z = 0.0
+    t.transform.rotation.w = 1.0
+
+    br.sendTransform(t)
+
+
 def compute_G(point, anchors):
     G = []
     for i in range(len(anchors)):
@@ -161,7 +177,15 @@ if __name__ == '__main__':
 
     posPub = rospy.Publisher('RangePositionPublisher', PoseArray, queue_size=10) 
     rospy.Subscriber("/FilteredRangePublisher", Range, callback)
+    
+    br = tf2_ros.TransformBroadcaster()
+    
+
+
     rate = rospy.Rate(updateRate)
+
+
+
     while not rospy.is_shutdown():
         if (len(rangebuffer.data) > 4): #todo (auslagern + timeout beruecksichtigen!) kann hier so weg, macht durch mehrere targets im gleichen buffer keinen sinn mehr 
             #rospy.loginfo("debug: entered rate loop")
@@ -170,4 +194,8 @@ if __name__ == '__main__':
             rospy.loginfo(pos)
             print(pos)
             posPub.publish(createPosMsg(pos))
+
+            for singlepos in pos: # create transformations for all the tragets 
+                send_target_transform(br,singlepos, pos)
+
         rate.sleep()
