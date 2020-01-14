@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<launch>
+	<node name="range" pkg="driving_swarm_positioning" type="fake_range.py">
+		<rosparam command="load" file="$(find driving_swarm_positioning)/param/RangePositionParameters.yml"/>
+	</node>
+	<node name="filter" pkg="driving_swarm_positioning" type="range_filter.py"/>
+	<node name="position" pkg="driving_swarm_positioning" type="pos_pub.py" output="screen">
+		<rosparam command="load" file="$(find driving_swarm_positioning)/param/RangePositionParameters.yml"/>
+	</node>
+</launch>
