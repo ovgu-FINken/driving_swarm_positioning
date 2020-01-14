@@ -79,5 +79,5 @@ if __name__ == '__main__':
     medianFilterWindow = rospy.get_param('~MedianFilterWindow', 10)
     rangePub.window = medianFilterWindow
     #rangePub = rospy.Publisher('FilteredRangePublisher', Range, queue_size=10)
-    rospy.Subscriber("/turtlebot1/RangePublisher", Range, callback)
-    rospy.spin();
+    rospy.Subscriber("/RangePublisher", Range, callback)
+    rospy.spin()

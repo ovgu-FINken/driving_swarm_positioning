@@ -3,6 +3,7 @@
 import rospy
 from driving_swarm_positioning.msg import Range
 from geometry_msgs.msg import Pose
+from geometry_msgs.msg import PoseArray
 import time
 import numpy as np
 import tf
@@ -88,9 +89,6 @@ def send_static_map_transform():
     br.sendTransform(t)
 
 
-def build_pos_msg(pos):
-    return
-
 def compute_G(point, anchors):
     G = []
     for i in range(len(anchors)):
@@ -101,15 +99,15 @@ def compute_G(point, anchors):
 def compute_multible_positions(rb, max_iterations=10, startpoint=[0,0,0]):
     targetList = []
     targets = {}
-    for rf in rb:
-        if rf.src not in targetlist :
+    for rf in rb.data:
+        if rf.src not in targetList:
             targetList.append(rf.src)
     for t in targetList:
         target = compute_position(rb, t, max_iterations, startpoint)
-        targets[t] = target 
-    return targets 
+        targets[t] = target
+    return targets
 
-def compute_position(rb, targetNR, max_iterations=10, startpoint=[0,0,0]):
+def compute_position(rb, targetNR, max_iterations=10, startpoint=np.array([0,0,0])):
 
     anchors = []
     distances = []
@@ -119,6 +117,8 @@ def compute_position(rb, targetNR, max_iterations=10, startpoint=[0,0,0]):
             anchors.append(rf.anchorPos)
             distances.append(rf.range)
 
+    anchors = np.array(anchors)
+    distances = np.array(distances)
     iter_point = startpoint
 
     for g in range(0,max_iterations):
@@ -130,17 +130,20 @@ def compute_position(rb, targetNR, max_iterations=10, startpoint=[0,0,0]):
     return iter_point
 
 def createPosMsg(pos):
-    posemsg = Pose()
-    posemsg.position.x = pos[0]
-    posemsg.position.y = pos[1]
-    posemsg.position.z = pos[2]
-    return posemsg
+    posearraymsg = PoseArray()
+    for singlepos in pos:
+        posemsg = Pose()
+        posemsg.position.x = pos[singlepos][0]
+        posemsg.position.y = pos[singlepos][1]
+        posemsg.position.z = pos[singlepos][2]
+        posearraymsg.poses.append(posemsg)
+    return posearraymsg
 
 def callback(msg):
     #print("received Message:")
     #print(msg.range)
-    rangebuffer.addRange(msg);
-    rangebuffer.printBuffer();
+    rangebuffer.addRange(msg)
+    rangebuffer.printBuffer()
     #pos = compute_position(rangebuffer, startpoint = latestPosition)
     #print(pos)
 
@@ -155,14 +158,16 @@ if __name__ == '__main__':
     rospy.loginfo("i am running NOW")
 
     send_static_map_transform()
-    
-    posPub = rospy.Publisher('RangePositionPublisher', Pose,queue_size=10) 
-    rospy.Subscriber("/turtlebot1/FilteredRangePublisher", Range, callback)
+
+    posPub = rospy.Publisher('RangePositionPublisher', PoseArray, queue_size=10) 
+    rospy.Subscriber("/FilteredRangePublisher", Range, callback)
     rate = rospy.Rate(updateRate)
     while not rospy.is_shutdown():
-        if (len(rangebuffer.data) > 4): #todo (auslagern + timeout beruecksichtigen!)
-        	pos = compute_positions(rangebuffer, startpoint = latestPosition)
-        	rospy.loginfo(pos)
+        if (len(rangebuffer.data) > 4): #todo (auslagern + timeout beruecksichtigen!) kann hier so weg, macht durch mehrere targets im gleichen buffer keinen sinn mehr 
+            #rospy.loginfo("debug: entered rate loop")
+            pos = compute_multible_positions(rangebuffer) #todo latest position array als startpoints !!
+            #rospy.loginfo("debug: past compute_multible_positions")
+            rospy.loginfo(pos)
             print(pos)
-		#posPub.publish(createPosMsg(pos))
+            posPub.publish(createPosMsg(pos))
         rate.sleep()
