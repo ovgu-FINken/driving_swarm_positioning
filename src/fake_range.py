@@ -6,7 +6,7 @@ from gazebo_msgs.msg import ModelStates
 from driving_swarm_positioning.msg import Range
 
 def sendRanges(pub, anchors, targets):
-    for i in range(0,len(targets)-1):
+    for i in range(0,len(targets)):
         for anchor in anchors:
             rangeMsg = Range()
             rangeMsg.src = i
