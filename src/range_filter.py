@@ -4,6 +4,11 @@ import rospy
 from driving_swarm_positioning.msg import Range
 import numpy as np
 
+'''Filters Range Messages (median filter over 10 values) and published filtered Messages on a new topic'''
+# Input:    RangeMessages
+# Output:   Filtered RangeMessages
+
+
 class RingBuffer:
     """ class that implements a not-yet-full buffer """
     def __init__(self,size_max):

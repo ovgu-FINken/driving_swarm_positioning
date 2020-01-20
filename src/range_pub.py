@@ -5,6 +5,11 @@ from driving_swarm_positioning.msg import Range
 import serial
 import pprz
 
+'''Reads Serial Protocol of the RangeModule attached to the given port'''
+# Input:    Received Serial Data
+# Output:   RangeMessages
+
+
 module = serial.Serial("/dev/ttyUSB0", 115200)
 parser = pprz.PprzParser()
 

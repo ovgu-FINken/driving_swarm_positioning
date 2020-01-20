@@ -12,7 +12,6 @@ import geometry_msgs.msg
 
 '''this node calculates 2d positions based on RangeMessages from Targets to Anchornodes. 
 The Anchornodes + UpdateRate are defined in param/RangePositionParameters.yml '''
-
 # Input:    RangePositionParameters.yml, RangeDistanceMessages
 # Output:   PoseArray, Transformation(static, world->locSystem), Transformations(nonstatic, locSystem->Targets)
 
