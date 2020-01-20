@@ -12,6 +12,7 @@ anchors: {
   "135": [-2.345,6.005,2.55],
   "136": [-2.073,3.203,2.553]
   }
+RangeMessageTopic: "/FilteredRangePublisher" 
 
 #FakeRange Parameter
 UpdateRate: 20 #Hz

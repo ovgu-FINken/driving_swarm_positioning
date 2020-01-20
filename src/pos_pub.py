@@ -10,9 +10,16 @@ import tf
 import tf2_ros
 import geometry_msgs.msg
 
+'''this node calculates 2d positions based on RangeMessages from Targets to Anchornodes. 
+The Anchornodes + UpdateRate are defined in param/RangePositionParameters.yml '''
+
+# Input:    RangePositionParameters.yml, RangeDistanceMessages
+# Output:   PoseArray, Transformation(static, world->locSystem), Transformations(nonstatic, locSystem->Targets)
+
 locSystemName = "UWBLocalisation"
 
 class RangeBuffer:
+    '''Construct contains array of Rangeframes '''
     data=[]
     anchors={}
     def __init__(self):
@@ -46,6 +53,7 @@ class RangeBuffer:
             rospy.logdebug(str(rangeFrame.src) + " --> " + str(rangeFrame.target) + " = " + str(rangeFrame.range) + "   : " + str(rangeFrame.howold()) + "       " + str(rangeFrame.anchorPos) )
 
 class RangeFrame:
+    '''Construct contains Range/Distance, Source, Target/Destination of the Distance and lastUpdateTime'''
     range = None
     src = None
     target = None
@@ -72,14 +80,15 @@ rangeTimeout = 2.
 
 
 def send_static_map_transform():
+    '''Sends static transformation from world->locSystem'''
     br = tf2_ros.StaticTransformBroadcaster()
     t = geometry_msgs.msg.TransformStamped()
 
     t.header.stamp = rospy.Time.now()
     t.header.frame_id = 'world'
     t.child_frame_id = locSystemName
-    t.transform.translation.x = 0.0  # msg.origin.position.x
-    t.transform.translation.y = 0.0  # msg.origin.position.y
+    t.transform.translation.x = 0.0  
+    t.transform.translation.y = 0.0  
     t.transform.translation.z = 0.0
     t.transform.rotation.x = 0.0
     t.transform.rotation.y = 0.0
@@ -90,12 +99,13 @@ def send_static_map_transform():
 
 
 def send_target_transform(br, target, pos):
+    '''Sends nonstatic transformations from locSystem->Targets'''
     t = geometry_msgs.msg.TransformStamped()
     t.header.stamp = rospy.Time.now()
     t.header.frame_id = locSystemName
     t.child_frame_id = "targetID_" + str(target)
-    t.transform.translation.x = pos[target][0]  # msg.origin.position.x
-    t.transform.translation.y = pos[target][1]  # msg.origin.position.y
+    t.transform.translation.x = pos[target][0] 
+    t.transform.translation.y = pos[target][1] 
     t.transform.translation.z = pos[target][2]
     t.transform.rotation.x = 0.0
     t.transform.rotation.y = 0.0
@@ -106,25 +116,27 @@ def send_target_transform(br, target, pos):
 
 
 def compute_G(point, anchors):
+    '''compute gradient-matrix for iterrative position solving'''
     G = []
     for i in range(len(anchors)):
         R_i = np.linalg.norm(point - anchors[i])
         G.append((point - anchors[i]) / R_i)
     return np.array(G)
 
-def compute_multible_positions(rb, max_iterations=10, startpoint=[0,0,0]):
+def compute_multible_positions(rb, max_iterations=10):
+    '''compute positions of all known targets (targets known through source in Range-messages)'''
     targetList = []
     targets = {}
     for rf in rb.data:
         if rf.src not in targetList:
             targetList.append(rf.src)
     for t in targetList:
-        target = compute_position(rb, t, max_iterations, startpoint)
+        target = compute_position(rb, t, max_iterations)
         targets[t] = target
     return targets
 
 def compute_position(rb, targetNR, max_iterations=10, startpoint=np.array([0,0,0])):
-
+    '''iterative solver for a single target'''
     anchors = []
     distances = []
     #fill the arrays so that the order is the same but independent of sorting
@@ -156,6 +168,7 @@ def createPosMsg(pos):
     return posearraymsg
 
 def callback(msg):
+    '''adds new received RangeMessage to the RangeBuffer'''
     #print("received Message:")
     #print(msg.range)
     rangebuffer.addRange(msg)
@@ -164,33 +177,27 @@ def callback(msg):
     #print(pos)
 
 if __name__ == '__main__':
-
+    '''Init RosNode, publisher, subscriber + load parameters and fill Rangebuffer with given anchornodes'''
     rospy.init_node("RangePositionCalculator")
     anchors = rospy.get_param('~anchors')
     rangebuffer.anchors = anchors        
     updateRate = rospy.get_param('~positionUpdateRate', 10) #Hz
     rangeTimeout = rospy.get_param('~rangeTimeout', 2.) #s
+    RangeMessageTopic = rospy.get_param('~RangeMessageTopic', "/FilteredRangePublisher")
 
     rospy.loginfo("i am running NOW")
 
     send_static_map_transform()
 
     posPub = rospy.Publisher('RangePositionPublisher', PoseArray, queue_size=10) 
-    rospy.Subscriber("/FilteredRangePublisher", Range, callback)
+    rospy.Subscriber(RangeMessageTopic, Range, callback)
     
     br = tf2_ros.TransformBroadcaster()
-    
-
 
     rate = rospy.Rate(updateRate)
-
-
-
     while not rospy.is_shutdown():
-        if (len(rangebuffer.data) > 4): #todo (auslagern + timeout beruecksichtigen!) kann hier so weg, macht durch mehrere targets im gleichen buffer keinen sinn mehr 
-            #rospy.loginfo("debug: entered rate loop")
-            pos = compute_multible_positions(rangebuffer) #todo latest position array als startpoints !!
-            #rospy.loginfo("debug: past compute_multible_positions")
+        if (len(rangebuffer.data) > 1): # avoid empty buffer error 
+            pos = compute_multible_positions(rangebuffer) #todo latest position array as startpoints of iterative position solver !!
             rospy.loginfo(pos)
             print(pos)
             posPub.publish(createPosMsg(pos))
