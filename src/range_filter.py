@@ -4,10 +4,11 @@ import rospy
 from driving_swarm_positioning.msg import Range
 import numpy as np
 
-'''Filters Range Messages (median filter over 10 values) and published filtered Messages on a new topic'''
+'''Filters Range Messages (median filter over $WINDOW values) and published filtered Messages on a new topic'''
 # Input:    RangeMessages
 # Output:   Filtered RangeMessages
 
+WINDOW=3
 
 class RingBuffer:
     """ class that implements a not-yet-full buffer """
@@ -39,8 +40,8 @@ class RingBuffer:
 
 class RangeBufferFilterDings:
     data = [] #[[start,ziel,buffer],[start,ziel,buffer],[start,ziel,buffer],...]
-    window = 10
-    def __init__(self, window=10):
+    window = WINDOW
+    def __init__(self, window=WINDOW):
         self.data = []
         self.window = window
 
@@ -66,7 +67,7 @@ def filterfunction(DataList):
 
 
 rangefilter = RangeBufferFilterDings()
-rangePub = rospy.Publisher('FilteredRangePublisher', Range, queue_size=10)
+rangePub = rospy.Publisher('FilteredRangePublisher', Range, queue_size=WINDOW)
 
 
 def callback(msg):
@@ -81,8 +82,8 @@ def callback(msg):
 if __name__ == '__main__':
     global rangePub
     rospy.init_node("RangeFilter")
-    medianFilterWindow = rospy.get_param('~MedianFilterWindow', 10)
+    medianFilterWindow = rospy.get_param('~MedianFilterWindow', WINDOW)
     rangePub.window = medianFilterWindow
-    #rangePub = rospy.Publisher('FilteredRangePublisher', Range, queue_size=10)
+    #rangePub = rospy.Publisher('FilteredRangePublisher', Range, queue_size=WINDOW)
     rospy.Subscriber("/RangePublisher", Range, callback)
     rospy.spin()
