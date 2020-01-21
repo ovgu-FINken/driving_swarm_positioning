@@ -139,6 +139,11 @@ def compute_multible_positions(rb, latestPositions, max_iterations=10):
 
 def compute_position(rb, targetNR, max_iterations=10, startpoint=np.array([0,0,0])):
     '''iterative solver for a single target'''
+    try: 
+        if startpoint == None:
+            startpoint=np.array([0,0,0])
+    except:
+        
     anchors = []
     distances = []
     #fill the arrays so that the order is the same but independent of sorting
