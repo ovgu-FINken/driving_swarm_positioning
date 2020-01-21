@@ -74,7 +74,7 @@ class RangeFrame:
 
 
 rangebuffer = RangeBuffer()
-latestPosition = np.array([0,0,0.10])
+latestPositions = {}
 rangeTimeout = 2.
 
 
@@ -122,7 +122,7 @@ def compute_G(point, anchors):
         G.append((point - anchors[i]) / R_i)
     return np.array(G)
 
-def compute_multible_positions(rb, max_iterations=10):
+def compute_multible_positions(rb, latestPositions, max_iterations=10):
     '''compute positions of all known targets (targets known through source in Range-messages)'''
     targetList = []
     targets = {}
@@ -130,7 +130,10 @@ def compute_multible_positions(rb, max_iterations=10):
         if rf.src not in targetList:
             targetList.append(rf.src)
     for t in targetList:
-        target = compute_position(rb, t, max_iterations)
+        if t in latestPositions:
+            target = compute_position(rb, t, max_iterations, startpoint=latestPositions[t])
+        else:
+            target = compute_position(rb, t, max_iterations)
         targets[t] = target
     return targets
 
@@ -189,7 +192,8 @@ if __name__ == '__main__':
     rate = rospy.Rate(updateRate)
     while not rospy.is_shutdown():
         if (len(rangebuffer.data) > 1): # avoid empty buffer error 
-            pos = compute_multible_positions(rangebuffer) #todo latest position array as startpoints of iterative position solver !!
+            pos = compute_multible_positions(rangebuffer, latestPositions) #todo latest position array as startpoints of iterative position solver !!
+            latestPositions = pos 
             rospy.loginfo(pos)
             print(pos)
 
