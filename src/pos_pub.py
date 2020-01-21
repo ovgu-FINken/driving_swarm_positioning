@@ -15,7 +15,7 @@ The Anchornodes + UpdateRate are defined in param/RangePositionParameters.yml ''
 # Input:    RangePositionParameters.yml, RangeDistanceMessages
 # Output:   Transformation(static, world->locSystem), Transformations(nonstatic, locSystem->Targets)
 
-locSystemName = "UWBLocalisation"
+locSystemName = "loc_system_uwb"
 
 class RangeBuffer:
     '''Construct contains array of Rangeframes '''
