@@ -143,7 +143,7 @@ def compute_position(rb, targetNR, max_iterations=10, startpoint=np.array([0,0,0
         if startpoint == None:
             startpoint=np.array([0,0,0])
     except:
-        
+       pass
     anchors = []
     distances = []
     #fill the arrays so that the order is the same but independent of sorting
