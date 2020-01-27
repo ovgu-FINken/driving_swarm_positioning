@@ -15,7 +15,7 @@ The Anchornodes + UpdateRate are defined in param/RangePositionParameters.yml ''
 # Input:    RangePositionParameters.yml, RangeDistanceMessages
 # Output:   Transformation(static, world->locSystem), Transformations(nonstatic, locSystem->Targets)
 
-locSystemName = "loc_system_uwb"
+locSystemName = "loc_system_uwb" #dependency of this variable-name in turtle_transform.py
 
 class RangeBuffer:
     '''Construct contains array of Rangeframes '''

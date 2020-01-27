@@ -13,7 +13,6 @@ import pprz
 module = serial.Serial("/dev/ttyUSB0", 115200)
 parser = pprz.PprzParser()
 
-
 def talker():
     pub = rospy.Publisher('RangePublisher', Range, queue_size=100)
     rospy.init_node('RangePublisher') 
