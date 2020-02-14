@@ -2,8 +2,11 @@
 
 import rospy
 from driving_swarm_positioning.msg import Range
+from geometry_msgs.msg import *
 import serial
 import pprz
+import tf2_ros
+import os
 
 '''gets the module id from the serial port and publishes a 0-transformation to the uwb_loc_system'''
 # Input:    Received Serial Data
@@ -11,7 +14,7 @@ import pprz
 
 locSystemName = "loc_system_uwb"
 
-module = serial.Serial("/dev/ttyUSB0", 115200) # change depending on the port the module is connected to
+module = serial.Serial("/dev/ttyS0", 115200) # change depending on the port the module is connected to
 parser = pprz.PprzParser()
 
 
@@ -21,8 +24,8 @@ def send_static_transform(id_nr):
     t = geometry_msgs.msg.TransformStamped()
 
     t.header.stamp = rospy.Time.now()
-    t.header.frame_id = 'locSystemName + "/target" + str(id_nr)'
-    t.child_frame_id = 'tb3_1' # todo: make variable / read existing global variable ? maybe namespace prefix in which this is run
+    t.header.frame_id = locSystemName + "/target" + str(id_nr)
+    t.child_frame_id = os.environ['ROS_HOSTNAME'] # todo: make variable / read existing global variable ? maybe namespace prefix in which this is run
     t.transform.translation.x = 0.0  
     t.transform.translation.y = 0.0  
     t.transform.translation.z = 0.0
