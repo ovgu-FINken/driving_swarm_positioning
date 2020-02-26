@@ -10,12 +10,12 @@ import pprz
 # Output:   RangeMessages
 
 
-module = serial.Serial("/dev/ttyUSB0", 115200)
+module = serial.Serial("/dev/ttyUSB0", 115200) # Change according to Module-Port
 parser = pprz.PprzParser()
 
 def talker():
     pub = rospy.Publisher('RangePublisher', Range, queue_size=100)
-    rospy.init_node('RangePublisher') 
+    rospy.init_node('RangePublisher')
     while not rospy.is_shutdown():
         g = module.read()
         pkg = parser.data_in(g)
@@ -23,7 +23,7 @@ def talker():
             dist, src, dest = pprz.parse_range(pkg)
             rangeMsg = Range()
             rangeMsg.src = src
-            rangeMsg.dest = dest 
+            rangeMsg.dest = dest
             rangeMsg.range = dist
             pub.publish(rangeMsg)
             print("sent Range Message")
